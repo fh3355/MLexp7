@@ -15,6 +15,13 @@ import os
 import csv
 import logging
 
+# 设置日志记录器
+logging.basicConfig(
+    filename='./MLexp7.log',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 import jupyter
 import matplotlib
 import matplotlib.pyplot as plt
@@ -29,17 +36,10 @@ font_path = './data/simhei.ttf'
 font_manager.fontManager.addfont(font_path)
 plt.rcParams["font.family"] = "SimHei"
 plt.rcParams['axes.unicode_minus'] = False
-print(plt.rcParams['font.family'])
+logging.debug(plt.rcParams['font.family'])
 
 SOS_token = 0
 EOS_token = 1
-
-# 设置日志记录器
-logging.basicConfig(
-    filename='MLexp7.log',
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 
 class Lang:
@@ -88,7 +88,7 @@ def normalizeString(s):
     return s
 
 def readLangs(lang1, lang2, reverse=False):
-    print("Reading lines...")
+    logging.debug("Reading lines...")
 
     # Read the file and split into lines
     file_path = "./data/eng-cmn.txt"
@@ -134,20 +134,20 @@ def filterPairs(pairs):
     
 def prepareData(lang1, lang2, reverse=False):
     input_lang, output_lang, pairs = readLangs(lang1, lang2, reverse)
-    print("Read %s sentence pairs" % len(pairs))
+    logging.info(f"Read {len(pairs)} sentence pairs")
     pairs = filterPairs(pairs)
-    print("Trimmed to %s sentence pairs" % len(pairs))
-    print("Counting words...")
+    logging.info(f"Trimmed to {len(pairs)} sentence pairs")
+    logging.info("Counting words...")
     for pair in pairs:
         input_lang.addSentence(pair[0])
         output_lang.addSentence(pair[1])
-    print("Counted words:")
-    print(input_lang.name, input_lang.n_words)
-    print(output_lang.name, output_lang.n_words)
+    logging.info("Counted words:")
+    logging.info(f'{input_lang.name}  {input_lang.n_words}')
+    logging.info(f'{output_lang.name}  {output_lang.n_words}')
     return input_lang, output_lang, pairs
 
 input_lang, output_lang, pairs = prepareData('eng', 'cmn', True)
-print(random.choice(pairs))
+logging.info(f'{random.choice(pairs)}')
 # 输出
 
 '''file_path = "./data/eng-cmn.txt"
@@ -499,26 +499,26 @@ def evaluateRandomly(encoder, decoder, n=100):
     sum_scores = 0
     for i in range(n):
         pair = random.choice(pairs)
-        print('>', pair[0])
-        print('=', pair[1])
+        logging.info(f'>  {pair[0]}')
+        logging.info(f'=  {pair[1]}')
         output_words, attentions = evaluate(encoder, decoder, pair[0])
         output_sentence = ' '.join(output_words)
-        print('<', output_sentence)
-        print('')
+        logging.info(f'<  {output_sentence}')
+        logging.info('\n')
         w = []
         words = pair[1].strip(' ').split(' ')
         words.append('<EOS>')
         w.append(words)
         bleu_score = sentence_bleu(w, output_words)
         sum_scores += bleu_score
-    print('The bleu_score is ', sum_scores/n)
+    logging.info(f'The bleu_score is {sum_scores/n}')
 
 # Training and Evaluating
 hidden_size = 256
 encoder1 = EncoderRNN(input_lang.n_words, hidden_size).to(device)
 attn_decoder1 = AttnDecoderRNN(hidden_size, output_lang.n_words, dropout_p=0.1).to(device)
 
-trainIters(encoder1, attn_decoder1, 75000, print_every=5000)
+trainIters(encoder1, attn_decoder1, n_iters=75000, print_every=5000, eval_every=100)
 # 输出
 
 evaluateRandomly(encoder1, attn_decoder1)
@@ -529,7 +529,7 @@ plt.rcParams['axes.unicode_minus'] = False # 解决保存图像是负号'-'显�
 
 output_words, attentions = evaluate(
     encoder1, attn_decoder1, "你 只 是 玩")
-print(output_words)
+logging.info(f'{output_words}')
 os.makedirs('models', exist_ok=True)
 attn_path = os.path.join('models', 'attentions_example_1.png')
 plt.matshow(attentions.numpy())
@@ -574,8 +574,8 @@ def showAttention(input_sentence, output_words, attentions):
 def evaluateAndShowAttention(input_sentence):
     output_words, attentions = evaluate(
         encoder1, attn_decoder1, input_sentence)
-    print('input =', input_sentence)
-    print('output =', ' '.join(output_words))
+    logging.info(f'input = {input_sentence}')
+    logging.info(f'output = {" ".join(output_words)}')
     showAttention(input_sentence, output_words, attentions)
 
 
