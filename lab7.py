@@ -424,7 +424,7 @@ def trainIters(encoder, decoder, n_iters, print_every=1000, plot_every=100,
 
     # save loss plot to model_dir
     try:
-        showPlot(plot_losses, os.path.join(model_dir, 'loss_plot.png'))
+        showPlot(plot_losses, os.path.join(result_dir, 'loss_plot.png'))
         logging.info(f"Saved loss plot to {os.path.join(model_dir, 'loss_plot.png')}")
     except Exception:
         # fallback to showing if saving failed
@@ -530,11 +530,11 @@ def showAttention(input_sentence, output_words, attentions):
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
 
-    # save attention figure to models/ with timestamp
-    os.makedirs('models', exist_ok=True)
-    inputtag = input_sentence[:3]
+    # save attention figure to result/ with timestamp and the first 4 characters of the input
+    os.makedirs('result', exist_ok=True)
+    inputtag = input_sentence.replace(" ", "")[:4]
     fname = f"attention_{int(time.time())}_{inputtag}.png"
-    out_path = os.path.join('models', fname)
+    out_path = os.path.join('result', fname)
     try:
         plt.savefig(out_path)
         plt.close()
