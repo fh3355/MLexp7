@@ -335,7 +335,7 @@ def evaluate_bleu(encoder, decoder, n=100):
         return sum_scores / n
 
 def trainIters(encoder, decoder, n_iters, print_every=1000, plot_every=100,
-               learning_rate=0.01, save_every=0, eval_every=0, eval_n=100, model_dir='models'):
+               learning_rate=0.01, save_every=0, eval_every=0, eval_n=100, model_dir='model', result_dir='result'):
     start = time.time()
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
@@ -348,11 +348,12 @@ def trainIters(encoder, decoder, n_iters, print_every=1000, plot_every=100,
     criterion = nn.NLLLoss()
 
     os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(result_dir, exist_ok=True)
     loss_history = []
 
     # CSV headers for history files
-    loss_csv = os.path.join(model_dir, 'loss_history.csv')
-    bleu_csv = os.path.join(model_dir, 'bleu_history.csv')
+    loss_csv = os.path.join(result_dir, 'loss_history.csv')
+    bleu_csv = os.path.join(result_dir, 'bleu_history.csv')
     # create/overwrite CSV files with headers
     with open(loss_csv, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -513,35 +514,6 @@ def evaluateRandomly(encoder, decoder, n=100):
         sum_scores += bleu_score
     logging.info(f'The bleu_score is {sum_scores/n}')
 
-# Training and Evaluating
-hidden_size = 256
-encoder1 = EncoderRNN(input_lang.n_words, hidden_size).to(device)
-attn_decoder1 = AttnDecoderRNN(hidden_size, output_lang.n_words, dropout_p=0.1).to(device)
-
-trainIters(encoder1, attn_decoder1, n_iters=75000, print_every=5000, eval_every=100)
-# 输出
-
-evaluateRandomly(encoder1, attn_decoder1)
-# 输出
-
-plt.rcParams['font.sans-serif'] = ['KaiTi'] # 指定默认字体
-plt.rcParams['axes.unicode_minus'] = False # 解决保存图像是负号'-'显示为方块的问题
-
-output_words, attentions = evaluate(
-    encoder1, attn_decoder1, "你 只 是 玩")
-logging.info(f'{output_words}')
-os.makedirs('models', exist_ok=True)
-attn_path = os.path.join('models', 'attentions_example_1.png')
-plt.matshow(attentions.numpy())
-try:
-    plt.savefig(attn_path)
-    plt.close()
-    logging.info(f"Saved attention matrix to {attn_path}")
-except Exception:
-    logging.exception('Failed to save attention example image')
-    plt.show()
-# 输出
-
 def showAttention(input_sentence, output_words, attentions):
     # Set up figure with colorbar
     fig = plt.figure()
@@ -560,7 +532,8 @@ def showAttention(input_sentence, output_words, attentions):
 
     # save attention figure to models/ with timestamp
     os.makedirs('models', exist_ok=True)
-    fname = f"attention_{int(time.time())}.png"
+    inputtag = input_sentence[:3]
+    fname = f"attention_{int(time.time())}_{inputtag}.png"
     out_path = os.path.join('models', fname)
     try:
         plt.savefig(out_path)
@@ -577,6 +550,36 @@ def evaluateAndShowAttention(input_sentence):
     logging.info(f'input = {input_sentence}')
     logging.info(f'output = {" ".join(output_words)}')
     showAttention(input_sentence, output_words, attentions)
+
+# Training and Evaluating
+hidden_size = 256
+encoder1 = EncoderRNN(input_lang.n_words, hidden_size).to(device)
+attn_decoder1 = AttnDecoderRNN(hidden_size, output_lang.n_words, dropout_p=0.1).to(device)
+
+trainIters(encoder1, attn_decoder1, n_iters=75000, print_every=5000, eval_every=100)
+# 输出
+
+evaluateRandomly(encoder1, attn_decoder1)
+# 输出
+
+# plt.rcParams['font.sans-serif'] = ['KaiTi'] # 指定默认字体
+# plt.rcParams['axes.unicode_minus'] = False # 解决保存图像是负号'-'显示为方块的问题
+
+# output_words, attentions = evaluate(
+#     encoder1, attn_decoder1, "你 只 是 玩")
+# logging.info(f'{output_words}')
+# os.makedirs('models', exist_ok=True)
+# attn_path = os.path.join('models', 'attentions_example_1.png')
+# plt.matshow(attentions.numpy())
+# try:
+#     plt.savefig(attn_path)
+#     plt.close()
+#     logging.info(f"Saved attention matrix to {attn_path}")
+# except Exception:
+#     logging.exception('Failed to save attention example image')
+#     plt.show()
+evaluateAndShowAttention("你 只 是 玩")
+# 输出
 
 
 evaluateAndShowAttention("他 和 他 的 邻 居 相 处 ")
